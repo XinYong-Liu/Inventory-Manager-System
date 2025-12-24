@@ -52,7 +52,7 @@ res/values路径为默认值资源路径分别存储颜色`colors.xml`，主题`
   
 > 冷知识：XML 声明`<?xml version="1.0" encoding="utf-8"?>`是可选声明但为什么就只有strings.xml文件经常“没有” 因为最早 Android 官方示例里的 strings.xml它是最常被人手写、复制、翻译的文件少一行：不容易被翻译人员误删，不影响可读性，更不容易引起编码问题。久而久之，成了习惯。而themes / colors 常常“有”？文件更像“工程文件”，基本只由程序员维护，IDE 自动生成 / 重写。  
 
-### 确定数据类型与存储模式
+### 记录2：配置数据库
 启用room数据库（`./app/build.gradle.kts`）[[参考](https://developer.android.com/training/data-storage/room?hl=zh-cn#kts)]:
 ```kts
 plugins {
@@ -78,3 +78,45 @@ dependencies {
     ksp("androidx.room:room-compiler:$room_version")
 }
 ```
+如果出现Unresolved reference to version catalog和Unresolved reference: ksp的错误则需要去修改`libs.versions.toml`文件：  
+在`versions`标签下注册ksp版本（前半段 2.0.0是Kotlin 版本，后半段 1.0.24是KSP 自身版本）：
+```toml
+[versions]
+...
+ksp = "2.0.0-1.0.24"
+```
+在`plugins`标签下注册插件
+```toml
+[plugins]
+...
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+```
+此时只需要点击编译即可消除错误
+
+#### 创建数据库目录
+```cmd
+app/
+└─ src/
+   └─ main/
+      └─ java/
+         └─ com/
+            └─ scifiwolf/
+               └─ application/
+                  └─ scifiwolfdev/
+                     ├─ ui/
+                     │  └─ ...
+                     ├─ data/
+                     │  ├─ db/
+                     │  │  ├─ entity/
+                     │  │  ├─ dao/
+                     │  │  └─ AppDatabase.kt
+                     │  └─ repository/
+                     └─ MainActivity.kt
+```
+`RoomDatabase`本身是 抽象类，无法直接实例化。Room 需要生成一个 实现类。   
++ `entity`：存储数据结构
++ `dao`：存储数据操作接口
++ `AppDatabase.kt`: 是数据库的抽象接口，所以说在这个基础上还需要实现具体的数据库类
+`AppDatabase` 本身不做业务操作，它只是“把 `DAO` 和 `Entity` 连接起来”；真正的操作发生在 DAO，DAO 的操作对象是 Entity。
+
+
